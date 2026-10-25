@@ -332,6 +332,18 @@ CSR: csr29 is op0000=1 & op0407=13 & csr29 { export csr29; }
 CSR: csr30 is op0000=1 & op0407=14 & csr30 { export csr30; }
 CSR: csr31 is op0000=1 & op0407=15 & csr31 { export csr31; }
 
+#Writable bits of each control register (STC). PC, ID, VID, OPT, RCFG and CCFG are read-only;
+#CFG's cache-enable bits exist only with a cache. DBG is handled by its own STC constructor.
+CSRW: 0xffffffff is op0407 { export 0xffffffff:4; }
+CSRW: 0 is op0000=0 & op0407=0 { export 0:4; }
+CSRW: 0x3f is op0000=0 & op0407=2 { export 0x3f:4; }
+CSRW: 0xfffffffe is op0000=0 & op0407=4 { export 0xfffffffe:4; }
+CSRW: 0xffff is op0000=0 & (op0407=12 | op0407=13 | op0407=14 | op0407=15) { export 0xffff:4; }
+CSRW: 0x3ff is op0000=1 & op0407=0 { export 0x3ff:4; }
+CSRW: 0 is op0000=1 & (op0407=1 | op0407=6 | op0407=10 | op0407=11 | op0407=12) { export 0:4; }
+CSRW: 0x30f0 is op0000=1 & op0407=4 { export 0x30f0:4; }
+CSRW: 0xc0001b is op0000=1 & op0407=5 { export 0xc0001b:4; }
+
 RepeatBlockStart: is REPEAT_START {
 	export *[ram]:4 REPEAT_START;
 }
@@ -605,6 +617,12 @@ with :OM=0 {
         #(coprocessor) core has.
         :JMP Rm is sub=14 & Rn=0 & Rm {
             goto [Rm & 0xfffffffe];
+        }
+
+        #GCC returns with "jmp $11" after reloading the saved LP into $11
+        #(REGSAVE_CONTROL_TEMP) when a function saved LP; it uses no other "jmp $11".
+        :JMP Rm is sub=14 & Rn=0 & Rm & Rm=11 {
+            return [Rm & 0xfffffffe];
         }
 
         #0001_0000_mmmm_1111
@@ -908,20 +926,34 @@ with :OM=0 {
             CachePrefetch(imm0811:1, RmMem);
         }
 
+        #0111_1nnn_000n_0000: system call of the GNU/SID MeP simulators (libgloss's sim runtime);
+        #a reserved instruction on hardware. Number = bits 10-8 and 4; result in $0, errno in $1.
+        define pcodeop SimulatorSyscall;
+        define pcodeop SimulatorErrno;
+        :SIM_SYSCALL num is sub=0 & op1111=1 & op0507=0 & op0810 & imm0405 [ num = (op0810 << 1) | (imm0405 & 1); ] {
+            r0 = SimulatorSyscall(num:1, r1, r2, r3, r4);
+            r1 = SimulatorErrno();
+        }
+
         #0111_0000_00ii_0110: sets EXC.SIP<n> (bit 4+n), the software interrupt request
         :SWI imm0405 is sub=0b0110 & op0611=0 & imm0405 {
             exc = exc | (1 << (4 + imm0405));
             SoftwareInterrupt(imm0405:1);
         }
 
-        #0111_nnnn_cccc_100C: STC Rn,CSR (csrn = C||cccc)
-        :STC Rn,CSR is op0103=0b100 & Rn & CSR {
-            CSR = Rn;
+        #0111_nnnn_cccc_100C: STC Rn,CSR (csrn = C||cccc); only the writable bits change
+        :STC Rn,CSR is op0103=0b100 & Rn & CSR & CSRW {
+            CSR = (CSR & ~CSRW) | (Rn & CSRW);
         }
 
-        #Writes to PC are ignored; ID, OPT, RCFG and CCFG are read-only
+        #Writes to PC are ignored
         :STC Rn,CSR is op0103=0b100 & Rn & CSR & op0000=0 & op0407=0 { }
-        :STC Rn,CSR is op0103=0b100 & Rn & CSR & op0000=1 & (op0407=1 | op0407=10 | op0407=11 | op0407=12) { }
+
+        #DBG: bit 10 (BSF) can only be cleared; bits 7-8 are writable
+        :STC Rn,CSR is op0103=0b100 & Rn & CSR & op0000=1 & op0407=8 {
+            local m:4 = 0x180 | (0x400 * zext((Rn & 0x400) == 0));
+            CSR = (CSR & ~m) | (Rn & m);
+        }
 
         #0111_nnnn_cccc_101C: LDC Rn,CSR
         :LDC Rn,CSR is op0103=0b101 & Rn & CSR {
