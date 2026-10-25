@@ -1,7 +1,14 @@
+> **Ghidra-Rare fork.** On this branch the MeP processor is a standalone, tested module in
+> [`MeP/`](MeP/) (complete MeP-c4/c5 core instruction set, IVC2 coprocessor and VLIW mode,
+> big-endian GCC code); see [MeP/GHIDRA-RARE.md](MeP/GHIDRA-RARE.md) and
+> [MeP/CREDITS.md](MeP/CREDITS.md). Prebuilt zips of the MeP module for the three newest Ghidra
+> releases are on this fork's Releases page. The Vita ELF-PRX loader below is unchanged.
+> The original README follows; only the MeP section was updated.
+
 
 # VitaLoader Redux
 A Ghidra extension for PlayStation®Vita reverse engineers!
-This extension contains a loader for ELF-PRX modules, MeP-c5 processor and helper scripts.
+This extension contains a loader for ELF-PRX modules, ~~MeP-c5 processor~~ and helper scripts. *(Ghidra-Rare: the MeP-c5 processor is the separate module in [`MeP/`](MeP/).)*
 
 ## Features
 Redux can be used in place of the ELF loader provided by Ghidra to load executables in ELF-PRX format targeting the PlayStation®Vita platform. **This loader does NOT support standard ELF executables - only use it for ELFs in PRX format.**
@@ -87,15 +94,17 @@ Can be found in the *Script Manager* under the `Vita` category.
   - This allows linking across modules with the systematic names which are more stable
 
 #### MeP-c5 support
+*(Ghidra-Rare: the MeP processor now lives in the separate module [`MeP/`](MeP/); install
+its own zip. Status of the items below on this branch in brackets.)*
 - Original idea from [ghidra-mep](https://github.com/xyzz/ghidra-mep) by xyz
   - **Written from scratch**
   - *`ghidra-mep` used as reference (along with Ghidra "samples") for tricky points*
-- Implements most of the MeP-c4 instruction set
-  - Coprocessor-modulo instructions are not implemented
-  - MeP-c5 instructions are not implemented (except `PREF`)
+- Implements ~~most of~~ the MeP-c4 instruction set *[complete; checked against GNU objdump]*
+  - ~~Coprocessor-modulo instructions are not implemented~~ *[fixed: implemented]*
+  - ~~MeP-c5 instructions are not implemented (except `PREF`)~~ *[fixed: every MeP-c5 instruction GNU binutils knows]*
   - The `CACHE` instruction is implemented
     - **This fixes `halt_baddata()` in some CMeP binaries!**
-- IVC2 coprocessor (i.e. Venezia core) is not implemented
+- ~~IVC2 coprocessor (i.e. Venezia core) is not implemented~~ *[fixed: languages `MeP-c5:LE/BE:32:IVC2` decode the IVC2 instructions and VLIW bundles; most IVC2 operations are user operations, see [MeP/GHIDRA-RARE.md](MeP/GHIDRA-RARE.md)]*
 
 ## Installation
 Download the [latest release](https://github.com/CreepNT/VitaLoaderRedux/releases/latest) for the Ghidra version you use.
@@ -138,8 +147,8 @@ The following features might be implemented in Redux:
 - Object file support (`.o` files)
 - Unwind tables parsing
   - *if it might be useful for C++ binaries reversing, which I doubt*
-- Full MeP-c5 implementation
-- Venezia (MeP + IVC2) support
+- ~~Full MeP-c5 implementation~~ *(Ghidra-Rare: done in [`MeP/`](MeP/))*
+- ~~Venezia (MeP + IVC2) support~~ *(Ghidra-Rare: decoding done in [`MeP/`](MeP/))*
 
 ## FAQ
 
