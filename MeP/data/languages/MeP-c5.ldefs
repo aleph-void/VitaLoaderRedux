@@ -7,11 +7,39 @@
             endian="little"
             size="32"
             variant="CMeP"
-            version="0.11"
+            version="1.0"
             slafile="CMeP.sla"
             processorspec="MeP-c5.pspec"
             id="MeP-c5:LE:32:CMeP">
-    	<description>Toshiba MeP-c5 - CMeP implementation</description>
+    	<description>Toshiba MeP-c5 - CMeP implementation (PlayStation Vita; no coprocessor, UCI or DSP)</description>
     	<compiler name="default" spec="MeP-c5.cspec" id="default"/>
+    	<external_name tool="gnu" name="mep"/>
+    	<external_name tool="DWARF.register.mapping.file" name="MeP-c5.dwarf"/>
+	</language>
+   <language processor="MeP-c5"
+            endian="little"
+            size="32"
+            variant="default"
+            version="1.0"
+            slafile="MeP-c5_le.sla"
+            processorspec="MeP-c5.pspec"
+            id="MeP-c5:LE:32:default">
+    	<description>Toshiba MeP-c5/c4/h1, little-endian, all core options and coprocessor loads/stores</description>
+    	<compiler name="default" spec="MeP-c5.cspec" id="default"/>
+    	<external_name tool="gnu" name="mep"/>
+    	<external_name tool="DWARF.register.mapping.file" name="MeP-c5.dwarf"/>
+	</language>
+   <language processor="MeP-c5"
+            endian="big"
+            size="32"
+            variant="default"
+            version="1.0"
+            slafile="MeP-c5_be.sla"
+            processorspec="MeP-c5.pspec"
+            id="MeP-c5:BE:32:default">
+    	<description>Toshiba MeP-c5/c4/h1, big-endian (GCC's default), all core options and coprocessor loads/stores</description>
+    	<compiler name="default" spec="MeP-c5.cspec" id="default"/>
+    	<external_name tool="gnu" name="mep"/>
+    	<external_name tool="DWARF.register.mapping.file" name="MeP-c5.dwarf"/>
 	</language>
 </language_definitions>

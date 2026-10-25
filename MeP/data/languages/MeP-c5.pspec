@@ -4,4 +4,34 @@
 
 <processor_spec>
   <programcounter register="pc"/>
+  <!-- Control bus (STCB/LDCB): control-bus address n is cbus:4*n. The interrupt controller and
+       timer registers of the MeP-c4/c5 core are named; device registers vary per chip. -->
+  <volatile outputop="write_volatile" inputop="read_volatile">
+    <range space="cbus" first="0x0" last="0x3ffff"/>
+  </volatile>
+  <default_symbols>
+    <symbol name="IVR"  address="cbus:0x0"/>
+    <symbol name="ISR"  address="cbus:0x4"/>
+    <symbol name="IER"  address="cbus:0x8"/>
+    <symbol name="IET"  address="cbus:0xc"/>
+    <symbol name="ILR0" address="cbus:0x10"/>
+    <symbol name="ILR1" address="cbus:0x14"/>
+    <symbol name="ILR2" address="cbus:0x18"/>
+    <symbol name="ILR3" address="cbus:0x1c"/>
+    <symbol name="CNT0" address="cbus:0x1000"/>
+    <symbol name="CMP0" address="cbus:0x1004"/>
+    <symbol name="TEN0" address="cbus:0x1008"/>
+    <symbol name="TCR0" address="cbus:0x100c"/>
+    <symbol name="TIS0" address="cbus:0x1010"/>
+    <symbol name="TCD0" address="cbus:0x1014"/>
+    <symbol name="CNT1" address="cbus:0x1040"/>
+    <symbol name="CMP1" address="cbus:0x1044"/>
+    <symbol name="TEN1" address="cbus:0x1048"/>
+    <symbol name="TCR1" address="cbus:0x104c"/>
+    <symbol name="TIS1" address="cbus:0x1050"/>
+    <symbol name="TCD1" address="cbus:0x1054"/>
+  </default_symbols>
+  <default_memory_blocks>
+    <memory_block name="CBUS" start_address="cbus:0x0" length="0x40000" initialized="false"/>
+  </default_memory_blocks>
 </processor_spec>

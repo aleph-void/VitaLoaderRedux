@@ -1,0 +1,29 @@
+<dwarf>
+	<!-- GCC's MeP register numbers (DBX_REGISTER_NUMBER is the identity): 0-15 general
+	     registers, 16-47 control registers, 48-79 coprocessor registers, 80-111 coprocessor
+	     control registers -->
+	<register_mappings>
+		<register_mapping dwarf="0" ghidra="r0" auto_count="13"/>
+		<register_mapping dwarf="13" ghidra="tp"/>
+		<register_mapping dwarf="14" ghidra="gp"/>
+		<register_mapping dwarf="15" ghidra="sp" stackpointer="true"/>
+		<register_mapping dwarf="16" ghidra="pc"/>
+		<register_mapping dwarf="17" ghidra="lp"/>
+		<register_mapping dwarf="18" ghidra="sar"/>
+		<register_mapping dwarf="20" ghidra="rpb"/>
+		<register_mapping dwarf="21" ghidra="rpe"/>
+		<register_mapping dwarf="22" ghidra="rpc"/>
+		<register_mapping dwarf="23" ghidra="hi"/>
+		<register_mapping dwarf="24" ghidra="lo"/>
+		<register_mapping dwarf="28" ghidra="mb0"/>
+		<register_mapping dwarf="29" ghidra="me0"/>
+		<register_mapping dwarf="30" ghidra="mb1"/>
+		<register_mapping dwarf="31" ghidra="me1"/>
+		<register_mapping dwarf="32" ghidra="psw"/>
+		<register_mapping dwarf="35" ghidra="epc"/>
+		<register_mapping dwarf="36" ghidra="exc"/>
+		<register_mapping dwarf="48" ghidra="c0" auto_count="32"/>
+		<register_mapping dwarf="80" ghidra="ccr0" auto_count="32"/>
+	</register_mappings>
+	<call_frame_cfa value="0"/>
+</dwarf>
