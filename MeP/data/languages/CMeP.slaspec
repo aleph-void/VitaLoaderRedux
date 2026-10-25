@@ -1,3 +1,4 @@
+# PlayStation Vita CMeP: MeP-c5, little-endian, no coprocessor
 @define ENDIAN "little"
 
 define endian=$(ENDIAN);
@@ -13,7 +14,5 @@ define alignment=2;
 @define ABS_OPT 1
 @define LDZ_OPT 1
 @define DBG_OPT 1
-
-@define TIMER_CHANNELS 2
 
 @include "MeP-c5.sinc"

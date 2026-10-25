@@ -1,0 +1,22 @@
+# MeP-c5 (and MeP-c4/h1 code), little-endian, every core option and the generic coprocessor
+# instructions (coprocessor loads/stores, BCPxx, SYNCCP, JSRV/BSRV)
+@define ENDIAN "little"
+
+define endian=$(ENDIAN);
+define alignment=2;
+
+@define DIV_OPT 1
+@define MUL_OPT 1
+@define BIT_OPT 1
+@define SAT_OPT 1
+@define CLP_OPT 1
+@define MIN_OPT 1
+@define AVE_OPT 1
+@define ABS_OPT 1
+@define LDZ_OPT 1
+@define DBG_OPT 1
+@define UCI_OPT 1
+@define DSP_OPT 1
+@define COP_OPT 1
+
+@include "MeP-c5.sinc"
