@@ -84,8 +84,13 @@ define register offset=$(CP_OFFSET) size=4 [
 
 #Coprocessor control registers (CCR1 is the coprocessor branch condition, cp_flag)
 define register offset=$(CP_CREG_OFFSET) size=4 [
+@if IVC2_OPT == "1"
+	csar0 cc    ccr2  ccr3  cofr0 cofr1 cofa0 cofa1
+	ccr8  ccr9  ccr10 ccr11 ccr12 ccr13 ccr14 csar1
+@else
 	ccr0  ccr1  ccr2  ccr3  ccr4  ccr5  ccr6  ccr7
 	ccr8  ccr9  ccr10 ccr11 ccr12 ccr13 ccr14 ccr15
+@endif
 	ccr16 ccr17 ccr18 ccr19 ccr20 ccr21 ccr22 ccr23
 	ccr24 ccr25 ccr26 ccr27 ccr28 ccr29 ccr30 ccr31
 	ccr32 ccr33 ccr34 ccr35 ccr36 ccr37 ccr38 ccr39
@@ -94,15 +99,30 @@ define register offset=$(CP_CREG_OFFSET) size=4 [
 	ccr56 ccr57 ccr58 ccr59 ccr60 ccr61 ccr62 ccr63
 ];
 
+@if IVC2_OPT == "1"
+@define CP_FLAG "cc"
+@else
+@define CP_FLAG "ccr1"
+@endif
+
 #Repeat-block branch decision, taken at the second-to-last instruction of the block
 define register offset=0x19000 size=1 [ rpt ];
 
 # Context register
 @define CONTEXTREG_OFFSET 0x19FF8
+@if IVC2_OPT == "1"
+define register offset=$(CONTEXTREG_OFFSET) size=16 contextreg;
+@else
 define register offset=$(CONTEXTREG_OFFSET) size=8 contextreg;
+@endif
 define context contextreg
 	ELR=(0,0) noflow
+	#Operation mode: 0 core, 1 VLIW (IVC2 languages)
 	OM=(12,12)
+	#Set while the core instruction of a VLIW bundle is decoded
+	INVLIW=(13,13) noflow
+	#Set on the instruction after "stc $12,$lp" (GCC's mode-switching sibling call)
+	SIBJ=(14,14) noflow
 
 	#Number of instructions remaining, including the
 	#one marked, in REPEAT/EREPEAT block (either 2 or 1)
@@ -110,6 +130,12 @@ define context contextreg
 
 	#Target of a REPEAT/EREPEAT jump
 	REPEAT_START=(32,63) noflow
+@if IVC2_OPT == "1"
+	#IVC2 bundle slots while a bundle is decoded: P0S or P0 (IVA), P1 (IVB)
+	IVA=(64,91) noflow
+	IVB=(96,123) noflow
+@include "ivc2_ctx.sinc"
+@endif
 ;
 
 #16-bit instruction,
@@ -160,6 +186,9 @@ define token instr (16)
 	simm0107=(1,7) signed
 	simm0207=(2,7) signed
 	simm0111=(1,11) signed
+@if IVC2_OPT == "1"
+@include "ivc2_instr.sinc"
+@endif
 ;
 
 #Second part of 32-bit instructions
@@ -182,7 +211,17 @@ define token instr2(16)
 	wimm16=(0,15)
 	wsimm16=(0,15) signed
 	wdisp16=(0,15) signed
+@if IVC2_OPT == "1"
+@include "ivc2_instr2.sinc"
+@endif
 ;
+
+@if IVC2_OPT == "1"
+#Halfwords 1-3 of a 64-bit VLIW bundle
+define token ivt1(16) ivt1_all=(0,15);
+define token ivt2(16) ivt2_all=(0,15) ivt2_hi4=(12,15) ivt2_lo12=(0,11);
+define token ivt3(16) ivt3_all=(0,15);
+@endif
 
 attach variables
 	[ Rn Rm Rl RmA wRl ]
@@ -621,7 +660,7 @@ with :OM=0 {
 
         #GCC returns with "jmp $11" after reloading the saved LP into $11
         #(REGSAVE_CONTROL_TEMP) when a function saved LP; it uses no other "jmp $11".
-        :JMP Rm is sub=14 & Rn=0 & Rm & Rm=11 {
+        :JMP Rm is sub=14 & Rn=0 & Rm & Rm=11 & SIBJ=0 {
             return [Rm & 0xfffffffe];
         }
 
@@ -949,6 +988,12 @@ with :OM=0 {
         #Writes to PC are ignored
         :STC Rn,CSR is op0103=0b100 & Rn & CSR & op0000=0 & op0407=0 { }
 
+        #GCC's sibling call that switches the operation mode ends with
+        #"xor3 $12,$12,1; add3 $11,$11,%lo(f+1); stc $12,$lp; jmp $11": the jmp is not a return
+        :STC Rn,CSR is op0103=0b100 & Rn & Rn=12 & CSR & CSRW & op0000=0 & op0407=1 [ SIBJ = 1; globalset(inst_next, SIBJ); ] {
+            CSR = (CSR & ~CSRW) | (Rn & CSRW);
+        }
+
         #DBG: bit 10 (BSF) can only be cleared; bits 7-8 are writable
         :STC Rn,CSR is op0103=0b100 & Rn & CSR & op0000=1 & op0407=8 {
             local m:4 = 0x180 | (0x400 * zext((Rn & 0x400) == 0));
@@ -1149,22 +1194,22 @@ with :OM=0 {
     #Branch on the coprocessor condition (CCR1)
     #1101_1000_cccc_0100 dddd_dddd_dddd_dddd (disp17=dddd_dddd_dddd_dddd||0)
     :BCPEQ cccc,BcondTarget is (major=13 & op0811=0b1000 & sub=4 & cccc) ... & BcondTarget {
-        if ((cccc ^ ccr1) == 0) goto BcondTarget;
+        if ((cccc ^ $(CP_FLAG)) == 0) goto BcondTarget;
     }
 
     #1101_1000_cccc_0101 dddd_dddd_dddd_dddd
     :BCPNE cccc,BcondTarget is (major=13 & op0811=0b1000 & sub=5 & cccc) ... & BcondTarget {
-        if ((cccc ^ ccr1) != 0) goto BcondTarget;
+        if ((cccc ^ $(CP_FLAG)) != 0) goto BcondTarget;
     }
 
     #1101_1000_cccc_0110 dddd_dddd_dddd_dddd
     :BCPAT cccc,BcondTarget is (major=13 & op0811=0b1000 & sub=6 & cccc) ... & BcondTarget {
-        if ((cccc & ccr1) != 0) goto BcondTarget;
+        if ((cccc & $(CP_FLAG)) != 0) goto BcondTarget;
     }
 
     #1101_1000_cccc_0111 dddd_dddd_dddd_dddd
     :BCPAF cccc,BcondTarget is (major=13 & op0811=0b1000 & sub=7 & cccc) ... & BcondTarget {
-        if ((cccc & ccr1) == 0) goto BcondTarget;
+        if ((cccc & $(CP_FLAG)) == 0) goto BcondTarget;
     }
 @endif
 
@@ -1181,10 +1226,22 @@ with :OM=0 {
 
 @if COP_OPT == "1"
     #1101_1DDD_DDDD_1011 dddd_dddd_dddd_dddd: call a VLIW-mode subroutine
+@if IVC2_OPT == "1"
+    #The target runs in VLIW mode when called from core mode, and in core mode when called
+    #from a VLIW bundle
+    :BSRV BSRTarget is (major=13 & op1111=1 & sub=11) ... & BSRTarget [
+        OM = INVLIW $xor 1;
+        globalset(BSRTarget, OM);
+    ] {
+        lp = inst_next | 1;
+        call BSRTarget;
+    }
+@else
     :BSRV BSRTarget is (major=13 & op1111=1 & sub=11) ... & BSRTarget {
         lp = inst_next | 1;
         call BSRTarget;
     }
+@endif
 @endif
 
     #--------------------------#
@@ -1222,13 +1279,14 @@ with :OM=0 {
     }
 
     #1110_nnnn_0000_1001 dddd_dddd_dddd_dddd
-    #RPB = address after REPEAT, RPE = target (the second-to-last instruction of the block),
+    #RPB = address after REPEAT (after its bundle in VLIW mode), RPE = target (the
+    #second-to-last instruction of the block),
     #RPC = Rn: the block runs Rn+1 times.
     :REPEAT Rn,end is major=14 & Rm=0 & sub=9 & Rn; wsimm16 [
         end = inst_start + (wsimm16 << 1);
 
         #Save required info to the target instruction
-        REPEAT_START = inst_start + 4;
+        REPEAT_START = inst_start + 4 + (INVLIW * 4);
         REPEAT_REMAINING = 2;
         ELR = 0;
         globalset(end, REPEAT_START);
@@ -1246,7 +1304,7 @@ with :OM=0 {
 
         #Save required info to the target instruction
         ELR = 1;
-        REPEAT_START = inst_start + 4;
+        REPEAT_START = inst_start + 4 + (INVLIW * 4);
         REPEAT_REMAINING = 2;
         globalset(end, REPEAT_START);
         globalset(end, REPEAT_REMAINING);
@@ -1584,3 +1642,42 @@ with :OM=0 {
 @endif #COP_OPT == 1
 
 } #with :OM=0
+
+@if IVC2_OPT == "1"
+@include "ivc2.sinc"
+
+#----------------------------------------------------------------------------------------------
+# VLIW operation mode (IVC2: 64-bit bundles). Halfwords H0-H3:
+#   V1 (H0 major < 12):        16-bit core instruction H0, P0S = H1:H2[15:12], P1 = H2[11:0]:H3
+#   V3 (H0 = 1111_xxxx_xxxx_0111): P0 = H0[11:4]:H1:H2[15:12], P1 as V1
+#   V2 (otherwise):            32-bit core instruction H0:H1, H2[15:12] unused, P1 as V1
+# The slots execute in parallel; the coprocessor slots' semantics come first, so that a branch
+# in the core slot (or the end of a repeat block) still lets them execute.
+#----------------------------------------------------------------------------------------------
+
+:^instruction^" + "^IVSlotP0S^" + "^IVSlotP1 is (OM=1 & major<12 ; ivt1_all ; ivt2_hi4 & ivt2_lo12 ; ivt3_all) & instruction & IVSlotP0S & IVSlotP1 [
+	OM = 0; INVLIW = 1;
+	IVA = (ivt1_all << 4) | ivt2_hi4;
+	IVB = (ivt2_lo12 << 16) | ivt3_all;
+] {
+	build IVSlotP0S;
+	build IVSlotP1;
+	build instruction;
+}
+
+:^instruction^" + "^IVSlotP1 is (OM=1 & major>=12 ; ivt1_all ; ivt2_hi4 & ivt2_lo12 ; ivt3_all) & instruction & IVSlotP1 [
+	OM = 0; INVLIW = 1;
+	IVB = (ivt2_lo12 << 16) | ivt3_all;
+] {
+	build IVSlotP1;
+	build instruction;
+}
+
+:^IVSlotP0^" + "^IVSlotP1 is (OM=1 & major=15 & sub=7 & op0811 & op0407 ; ivt1_all ; ivt2_hi4 & ivt2_lo12 ; ivt3_all) & IVSlotP0 & IVSlotP1 [
+	IVA = (op0811 << 24) | (op0407 << 20) | (ivt1_all << 4) | ivt2_hi4;
+	IVB = (ivt2_lo12 << 16) | ivt3_all;
+] {
+	build IVSlotP0;
+	build IVSlotP1;
+}
+@endif

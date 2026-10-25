@@ -7,3 +7,6 @@ dist/
 .gradle/
 lib/
 __pycache__/
+
+# Ghidra's ELF extension package path contains "bin/" (ignored by the root .gitignore)
+!/src/main/java/ghidra/app/util/bin/

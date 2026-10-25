@@ -37,6 +37,10 @@
 
 
 
+@ifndef IVC2_OPT
+@define IVC2_OPT 0
+@endif
+
 # Instruction options
 
 @ifndef MUL_OPT
