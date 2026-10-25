@@ -7,6 +7,9 @@
 
 
 # VitaLoader Redux
+
+[![Sponsor Aleph Void](https://img.shields.io/badge/Sponsor-Aleph%20Void-EA4AAA?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/aleph-void)
+
 A Ghidra extension for PlayStation®Vita reverse engineers!
 This extension contains a loader for ELF-PRX modules, ~~MeP-c5 processor~~ and helper scripts. *(Ghidra-Rare: the MeP-c5 processor is the separate module in [`MeP/`](MeP/).)*
 
