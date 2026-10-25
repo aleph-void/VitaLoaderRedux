@@ -53,7 +53,7 @@
     	<description>Toshiba MeP-c5 with the IVC2 coprocessor (Venezia), little-endian: core options, IVC2 instructions, VLIW mode</description>
     	<compiler name="default" spec="MeP-c5.cspec" id="default"/>
     	<external_name tool="gnu" name="mep"/>
-    	<external_name tool="DWARF.register.mapping.file" name="MeP-c5.dwarf"/>
+    	<external_name tool="DWARF.register.mapping.file" name="MeP-c5-ivc2.dwarf"/>
 	</language>
    <language processor="MeP-c5"
             endian="big"
@@ -66,6 +66,6 @@
     	<description>Toshiba MeP-c5 with the IVC2 coprocessor (Venezia), big-endian: core options, IVC2 instructions, VLIW mode</description>
     	<compiler name="default" spec="MeP-c5.cspec" id="default"/>
     	<external_name tool="gnu" name="mep"/>
-    	<external_name tool="DWARF.register.mapping.file" name="MeP-c5.dwarf"/>
+    	<external_name tool="DWARF.register.mapping.file" name="MeP-c5-ivc2.dwarf"/>
 	</language>
 </language_definitions>

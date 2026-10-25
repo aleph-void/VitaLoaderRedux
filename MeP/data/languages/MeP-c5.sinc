@@ -371,10 +371,9 @@ CSR: csr29 is op0000=1 & op0407=13 & csr29 { export csr29; }
 CSR: csr30 is op0000=1 & op0407=14 & csr30 { export csr30; }
 CSR: csr31 is op0000=1 & op0407=15 & csr31 { export csr31; }
 
-#Writable bits of each control register (STC). PC, ID, VID, OPT, RCFG and CCFG are read-only;
-#CFG's cache-enable bits exist only with a cache. DBG is handled by its own STC constructor.
+#Writable bits of each control register (STC). ID, VID, OPT, RCFG and CCFG are read-only;
+#CFG's cache-enable bits exist only with a cache. PC and DBG have their own STC constructors.
 CSRW: 0xffffffff is op0407 { export 0xffffffff:4; }
-CSRW: 0 is op0000=0 & op0407=0 { export 0:4; }
 CSRW: 0x3f is op0000=0 & op0407=2 { export 0x3f:4; }
 CSRW: 0xfffffffe is op0000=0 & op0407=4 { export 0xfffffffe:4; }
 CSRW: 0xffff is op0000=0 & (op0407=12 | op0407=13 | op0407=14 | op0407=15) { export 0xffff:4; }
