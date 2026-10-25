@@ -69,10 +69,18 @@ define register offset=$(CP_OFFSET) size=8 [
 	c16 c17 c18 c19 c20 c21 c22 c23
 	c24 c25 c26 c27 c28 c29 c30 c31
 ];
+#Low 32 bits of c0-c15 (32-bit coprocessor transfers)
+@if ENDIAN == "big"
+define register offset=$(CP_OFFSET) size=4 [
+	_ c0l _ c1l _ c2l _ c3l _ c4l _ c5l _ c6l _ c7l
+	_ c8l _ c9l _ c10l _ c11l _ c12l _ c13l _ c14l _ c15l
+];
+@else
 define register offset=$(CP_OFFSET) size=4 [
 	c0l _ c1l _ c2l _ c3l _ c4l _ c5l _ c6l _ c7l _
 	c8l _ c9l _ c10l _ c11l _ c12l _ c13l _ c14l _ c15l _
 ];
+@endif
 
 #Coprocessor control registers (CCR1 is the coprocessor branch condition, cp_flag)
 define register offset=$(CP_CREG_OFFSET) size=4 [
@@ -360,11 +368,8 @@ macro cop_update(r, d, mode) {
 # MeP Core Instruction Set #
 #--------------------------#
 
-define pcodeop DisableInterrupt;
-define pcodeop EnableInterrupt;
 define pcodeop SynchronizeWithMemory;
 define pcodeop SynchronizeWithCoprocessor;
-define pcodeop Halt;
 define pcodeop BreakException;
 define pcodeop Sleep;
 define pcodeop DebugBreak;
@@ -826,12 +831,10 @@ with :OM=0 {
             #PSW.IEC is bit 0
             :DI is Rm=0 { #0111_0000_0000_0000
                 psw = psw & 0xfffffffe;
-                DisableInterrupt();
             }
 
             :EI is Rm=1 { #0111_0000_0001_0000
                 psw = psw | 1;
-                EnableInterrupt();
             }
         }
 
@@ -868,7 +871,6 @@ with :OM=0 {
             #Sets PSW.HALT (bit 11); execution resumes after an interrupt
             :HALT is Rm=0b0010 { #0111_0000_0010_0010
                 psw = psw | 0x800;
-                Halt();
             }
 
             :BREAK is Rm=0b0011 { #0111_0000_0011_0010
